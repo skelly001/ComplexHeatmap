@@ -189,48 +189,41 @@ dist2 = function(x, pairwise_fun = function(x, y) sqrt(sum((x - y)^2)), ...) {
 
 
 get_dist = function(matrix, method) {
-    if(is.function(method)) {
-        nargs = length(as.list(args(method)))
-        if(nargs == 2) { # a distance function
-            dst = method(matrix)
-        } else if(nargs == 3) {
-            dst = dist2(matrix, method)
-        } else {
-            stop_wrap("Since your distance method is a function, it can only accept one or two arguments.")
-        }
-    } else if(inherits(method, "dist")) {
-        return(method)
-    } else if(method %in% c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")) {
-        # if(any(is.na(matrix))) {
-        #     dst = get_dist(matrix, function(x, y) {
-        #         l = is.na(x) | is.na(y)
-        #         x = x[!l]
-        #         y = y[!l]
-        #         as.vector(dist(rbind(x, y), method = method))
-        #     })
-        #     warning("NA exists in the matrix, calculating distance by removing NA values.")
-        # } else {
-            dst = dist(matrix, method = method)
-        # }
-    } else if(method %in% c("pearson", "spearman", "kendall")) {
-        if(any(is.na(matrix))) {
-            dst = get_dist(matrix, function(x, y) {
-                    l = is.na(x) | is.na(y)
-                    x = x[!l]
-                    y = y[!l]
-                    1 - cor(x, y, method = method)
-                })
-            warning_wrap("NA exists in the matrix, calculating distance by removing NA values.")
-        } else {
-            dst = switch(method,
-                         pearson = as.dist(1 - cor(t(matrix), method = "pearson")),
-                         spearman = as.dist(1 - cor(t(matrix), method = "spearman")),
-                         kendall = as.dist(1 - cor(t(matrix), method = "kendall")))
-        }
-    } else {
-        stop_wrap(qq("method @{method} not supported"))
-    }
-    return(dst)
+   if(is.function(method)) {
+      nargs = length(as.list(args(method)))
+      if(nargs == 2) { # a distance function
+         dst = method(matrix)
+      } else if(nargs == 3) {
+         dst = dist2(matrix, method)
+      } else {
+         stop_wrap("Since your distance method is a function, it can only accept one or two arguments.")
+      }
+   } else if(inherits(method, "dist")) {
+      return(method)
+   } else if(method %in% c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")) {
+      # if(any(is.na(matrix))) {
+      #     dst = get_dist(matrix, function(x, y) {
+      #         l = is.na(x) | is.na(y)
+      #         x = x[!l]
+      #         y = y[!l]
+      #         as.vector(dist(rbind(x, y), method = method))
+      #     })
+      #     warning("NA exists in the matrix, calculating distance by removing NA values.")
+      # } else {
+      dst = dist(matrix, method = method)
+      # }
+   } else if(method %in% c("pearson", "spearman", "kendall")) {
+      if(any(is.na(matrix))) {
+         warning_wrap("NA exists in the matrix, calculating distance by removing NA values.")
+      }
+      dst = (1-cor(t(matrix),
+                   method = method,
+                   use = "pairwise.complete.obs"))/2
+      dst = as.dist(dst)
+   } else {
+      stop_wrap(qq("method @{method} not supported"))
+   }
+   return(dst)
 }
 
 get_dend_order = function(x) {
